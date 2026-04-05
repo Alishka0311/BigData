@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bd_snowflake_pg
+    restart: always
+    environment:
+      POSTGRES_DB: bdsnowflake
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./data:/data
+
+volumes:
+  pg_data:

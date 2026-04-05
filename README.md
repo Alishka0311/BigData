@@ -1,31 +1,263 @@
 # BigDataSnowflake
-Анализ больших данных - лабораторная работа №1 - нормализация данных в снежинку
 
-Одна из задач data engineer при работе с данными BigData трансформировать исходную модель данных источника в аналитическую модель данных. Аналитическая модель данных позволяет исследовать данные и принимать на основе полученных данных решения. Классическими универсальными схемами для анализа данных являются "звезда" и "снежинка". В лабораторной работе вам предстоит потренироваться в трансформации исходных данных из источников в модель данных снежинка.
+Лабораторная работа №1  
+Нормализация данных в аналитическую модель типа Snowflake
 
-Что необходимо сделать?
+---
 
-Необходимо данные источника (файлы mock_data.csv с номерами), которые представляют информацию о покупателях, продавцах, поставщиках, магазинах, товарах для домашних питомцев трансформировать в модель снежинка/звезда (факты и измерения с нормализацией).
+## Цель работы
 
-<img width="1411" height="692" alt="Лабораторная работа 1" src="https://github.com/user-attachments/assets/0282c756-76a3-48f7-86e4-df6e1ec6ac89" />
+Преобразовать исходные данные (CSV-файлы) в аналитическую модель данных типа **снежинка (Snowflake Schema)**.
+
+---
+
+##  Исходные данные
+
+Используются 10 CSV-файлов с данными о продажах товаров для домашних животных.
+
+Все CSV-файлы помещены в папку `data/` и автоматически монтируются в контейнер PostgreSQL.
+
+---
+
+##  Построенная модель
+
+Реализована схема снежинка:
+
+### Факт:
+- `fact_sales`
+
+### Измерения:
+- `dim_customer`
+- `dim_pet`
+- `dim_seller`
+- `dim_product`
+- `dim_store`
+- `dim_supplier`
+
+### Нормализация измерения товара:
+- `dim_product_category`
+- `dim_brand`
+- `dim_material`
+
+Измерение `dim_product` разбито на подтаблицы, поэтому модель является схемой **Snowflake**.
+
+---
+
+## Структура проекта
+
+```text
+BigDataSnowflake/
+│
+├── docker-compose.yml
+├── README.md
+├── data/
+│   ├── MOCK_DATA.csv
+│   ├── MOCK_DATA (1).csv
+│   ├── MOCK_DATA (2).csv
+│   ├── MOCK_DATA (3).csv
+│   ├── MOCK_DATA (4).csv
+│   ├── MOCK_DATA (5).csv
+│   ├── MOCK_DATA (6).csv
+│   ├── MOCK_DATA (7).csv
+│   ├── MOCK_DATA (8).csv
+│   └── MOCK_DATA (9).csv
+│
+└── sql/
+    ├── 01_create_stage.sql
+    ├── 02_load_csv.sql
+    ├── 03_create_snowflake.sql
+    ├── 04_load_dimensions.sql
+    ├── 05_load_fact.sql
+    └── 06_checks.sql
+```
 
 
-Алгоритм:
-1. форкнуть к себе этот репозиторий.
-2. Устанавливаете себе инструмент для работы с запросами SQL (рекомендую DBeaver).
-3. Запускаете базу данных PostgreSQL (рекомендую установку через docker).
-4. Скачиваете файлы с исходными данными mock_data( * ).csv, где ( * ) номера файлов. Всего 10 файлов, каждый по 1000 строк.
-5. Импортируете данные в БД PostgreSQL (например, через механизм импорта csv в DBeaver). Всего в таблице mock_data должно находиться 10000 строк из 10 файлов.
-6. Анализируете исходные данные с помощью запросов.
-7. Выявляете сущности фактов и измерений.
-8. Реализуете скрипты DDL для создания таблиц фактов и измерений.
-9. Реализуете скрипты DML для заполнения таблиц фактов и измерений из исходных данных.
-10. Проверяете полученный результат.
-11. Отправляете результат на проверку лаборантам.
-12. Обсуждаете работу с лаборантами.
+---
 
-Что должно быть результатом работы?
-1. Репозиторий, в котором есть исходные данные mock_data( * ).csv, где ( * ) номера файлов. Всего 10 файлов, каждый по 1000 строк.
-2. Файл docker-compose.yml с установкой PostgreSQL и заполненными данными из файлов mock_data(*).csv.
-3. Скрипты DDL (SQL) создания таблиц фактов и измерений в соответствии с моделью снежинка/звезда.
-4. Скрипты DML (SQL) заполнения таблиц фактов и измерений из исходных данных.
+## Запуск лабораторной работы
+
+### 1. Запуск базы данных
+
+В корне проекта выполнить:
+
+```bash
+docker compose up -d
+```
+
+Параметры подключения:
+
+| Параметр | Значение    |
+| -------- | ----------- |
+| Host     | localhost   |
+| Port     | 5434        |
+| Database | bdsnowflake |
+| User     | postgres    |
+| Password | postgres    |
+
+---
+
+### 2. Создание staging-таблицы
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/01_create_stage.sql
+```
+
+---
+
+### 3. Автоматическая загрузка CSV-файлов
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/02_load_csv.sql
+```
+
+Проверка:
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake -c "SELECT count(*) FROM mock_data;"
+```
+
+Ожидается:
+
+```text
+10000
+```
+
+---
+
+### 4. Создание схемы снежинка
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/03_create_snowflake.sql
+```
+
+---
+
+### 5. Заполнение таблиц измерений
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/04_load_dimensions.sql
+```
+
+---
+
+### 6. Заполнение таблицы фактов
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/05_load_fact.sql
+```
+
+Ожидаемый вывод:
+
+```text
+INSERT 0 10000
+```
+
+---
+
+### 7. Проверка результата
+
+Можно выполнить единый скрипт:
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/06_checks.sql
+```
+
+Или проверить вручную.
+
+#### Проверка количества записей
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake -c "SELECT count(*) FROM mock_data;"
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake -c "SELECT count(*) FROM fact_sales;"
+```
+
+Ожидается:
+
+```text
+10000
+10000
+```
+
+#### Проверка сумм
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake -c "SELECT (SELECT sum(sale_total_price) FROM mock_data) AS mock_sum, (SELECT sum(sale_total_price) FROM fact_sales) AS fact_sum;"
+```
+
+Суммы должны совпадать.
+
+#### Проверка связей
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake -c "SELECT 
+    (SELECT count(*) FROM fact_sales WHERE customer_key IS NULL) AS customer_null,
+    (SELECT count(*) FROM fact_sales WHERE seller_key IS NULL) AS seller_null,
+    (SELECT count(*) FROM fact_sales WHERE product_key IS NULL) AS product_null,
+    (SELECT count(*) FROM fact_sales WHERE store_key IS NULL) AS store_null,
+    (SELECT count(*) FROM fact_sales WHERE supplier_key IS NULL) AS supplier_null;"
+```
+
+Ожидается, что все значения равны `0`.
+
+---
+
+##  Пример аналитического запроса
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake -c "
+SELECT
+    c.country,
+    pr.product_name,
+    sum(f.sale_quantity) AS total_qty,
+    round(sum(f.sale_total_price), 2) AS total_sum
+FROM fact_sales f
+JOIN dim_customer c ON c.customer_key = f.customer_key
+JOIN dim_product pr ON pr.product_key = f.product_key
+GROUP BY c.country, pr.product_name
+ORDER BY total_sum DESC
+LIMIT 10;"
+```
+
+Пример результата:
+
+```text
+   country   | product_name | total_qty | total_sum
+-------------+--------------+-----------+-----------
+ China       | Dog Food     |      3307 | 159164.96
+ China       | Bird Cage    |      3107 | 154014.81
+ China       | Cat Toy      |      3059 | 140382.08
+ Indonesia   | Bird Cage    |      2750 | 122692.64
+ Indonesia   | Dog Food     |      2230 | 102301.43
+```
+
+---
+
+## Используемые скрипты
+
+| Файл                          | Назначение                                          |
+| ----------------------------- | --------------------------------------------------- |
+| `sql/01_create_stage.sql`     | создание staging-таблицы `mock_data`                |
+| `sql/02_load_csv.sql`         | автоматическая загрузка 10 CSV-файлов               |
+| `sql/03_create_snowflake.sql` | создание таблиц фактов и измерений                  |
+| `sql/04_load_dimensions.sql`  | загрузка измерений                                  |
+| `sql/05_load_fact.sql`        | загрузка таблицы фактов                             |
+| `sql/06_checks.sql`           | проверка результата                                 |
+
+---
+
+## Повторный запуск
+
+Если требуется повторно выполнить загрузку измерений и фактов, сначала очистить аналитические таблицы:
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/00_truncate_all.sql
+```
+
+Затем заново выполнить:
+
+```bash
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/04_load_dimensions.sql
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/05_load_fact.sql
+docker exec -i bd_snowflake_pg psql -U postgres -d bdsnowflake < sql/06_checks.sql
+```
+
