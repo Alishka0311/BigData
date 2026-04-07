@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bd_spark_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bdspark
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: bd_spark_clickhouse
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: bdspark_reports
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: clickhouse
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./sql/01_clickhouse_init.sql:/docker-entrypoint-initdb.d/01_clickhouse_init.sql:ro
+
+  spark:
+    image: spark:3.5.7-scala2.12-java17-python3-ubuntu
+    container_name: bd_spark_runner
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - clickhouse
+    working_dir: /opt/project/lr2
+    command: ["/bin/bash", "-lc", "sleep infinity"]
+    ports:
+      - "4040:4040"
+    volumes:
+      - ./:/opt/project/lr2
+      - ./data:/opt/project/lr2/data:ro
+
+volumes:
+  pg_data:
+  clickhouse_data:
