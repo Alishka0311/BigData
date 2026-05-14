@@ -1,0 +1,6 @@
+TRUNCATE TABLE bdtrino_analytics.sales_product_report;
+TRUNCATE TABLE bdtrino_analytics.sales_customer_report;
+TRUNCATE TABLE bdtrino_analytics.sales_time_report;
+TRUNCATE TABLE bdtrino_analytics.sales_store_report;
+TRUNCATE TABLE bdtrino_analytics.sales_supplier_report;
+TRUNCATE TABLE bdtrino_analytics.product_quality_report;

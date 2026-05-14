@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: lr4-postgres
+    environment:
+      POSTGRES_DB: bdtrino_source
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5437:5432"
+    volumes:
+      - ./postgres/init:/docker-entrypoint-initdb.d
+      - ./исходные данные:/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bdtrino_source"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: lr4-clickhouse
+    environment:
+      CLICKHOUSE_DB: bdtrino_source
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: clickhouse
+    ports:
+      - "8124:8123"
+      - "9001:9000"
+    volumes:
+      - ./clickhouse/init:/docker-entrypoint-initdb.d
+      - ./исходные данные:/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --user default --password clickhouse --query 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  trino:
+    image: trinodb/trino:444
+    container_name: lr4-trino
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./trino/etc:/etc/trino
+      - ./:/opt/project:ro

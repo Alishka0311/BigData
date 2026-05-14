@@ -1,0 +1,10 @@
+TRUNCATE TABLE bdtrino_analytics.dim_product_category;
+TRUNCATE TABLE bdtrino_analytics.dim_brand;
+TRUNCATE TABLE bdtrino_analytics.dim_material;
+TRUNCATE TABLE bdtrino_analytics.dim_customer;
+TRUNCATE TABLE bdtrino_analytics.dim_pet;
+TRUNCATE TABLE bdtrino_analytics.dim_seller;
+TRUNCATE TABLE bdtrino_analytics.dim_product;
+TRUNCATE TABLE bdtrino_analytics.dim_store;
+TRUNCATE TABLE bdtrino_analytics.dim_supplier;
+TRUNCATE TABLE bdtrino_analytics.fact_sales;
